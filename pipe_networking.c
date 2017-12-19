@@ -7,12 +7,15 @@
   creates the WKP (upstream) and opens it, waiting for a
   connection.
 
-  removes the WKP once a connection has been made
+  removes the WKP once a connection has been made (removing the WKP doesn't lose the connection)
 
   returns the file descriptor for the upstream pipe.
   =========================*/
 int server_setup() {
-  return -1;
+  mkfifo("luigi", 0644);
+  int from_client = open("luigi", O_RDONLY, 0);
+  remove("luigi");
+  return from_client;
 }
 
 
@@ -25,7 +28,12 @@ int server_setup() {
   returns the file descriptor for the downstream pipe.
   =========================*/
 int server_connect(int from_client) {
-  return -1;
+  char buffer[256];
+  ssize_t num_read = read(from_client, buffer, sizeof(buffer));
+  // buffer now contains the client's private FIFO name
+  int to_client = open(buffer, O_WRONLY, 0);
+  write(to_client, ACK, sizeof(ACK));
+  return to_client;
 }
 
 /*=========================
